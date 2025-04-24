@@ -434,7 +434,6 @@ const handleSizeChange = () =>{
 }
 // 点击其他页面的时候触发分页查询
 const handleCurrentChange = () =>{
-  console.log(bookPageQueryDTO.pageNum)
   load()
 }
 // 图书详情

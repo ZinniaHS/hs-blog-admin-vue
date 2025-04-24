@@ -59,12 +59,24 @@
                 <span>博客管理</span>
               </template>
             </el-menu-item>
-            <el-menu-item index="4" @click="router.push('../manager/book')">
+            <el-sub-menu index="4">
               <template #title>
-                <el-icon><Reading /></el-icon>
-                <span>图书管理</span>
+                <el-icon><location /></el-icon>
+                <span>图书模块</span>
               </template>
-            </el-menu-item>
+              <el-menu-item index="4-1" @click="router.push('../manager/book')">
+                <template #title>
+                  <el-icon><Reading /></el-icon>
+                  <span>图书管理</span>
+                </template>
+              </el-menu-item>
+              <el-menu-item index="4-2" @click="router.push('../manager/bookCategory')">
+                <template #title>
+                  <el-icon><Reading /></el-icon>
+                  <span>分类管理</span>
+                </template>
+              </el-menu-item>
+            </el-sub-menu>
             <el-sub-menu index="5">
               <template #title>
                 <el-icon><location /></el-icon>
