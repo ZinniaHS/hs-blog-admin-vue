@@ -43,6 +43,12 @@ const router = createRouter({
                     meta: {title :'图书管理'},
                     component: ()=>import( '../view/Book.vue'),
                 },
+                {
+                    path: 'blog',
+                    name: 'blog',
+                    meta: {title :'博客管理'},
+                    component: ()=>import( '../view/Blog.vue'),
+                },
             ]
         }
     ]

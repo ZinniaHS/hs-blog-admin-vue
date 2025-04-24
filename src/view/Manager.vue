@@ -53,7 +53,7 @@
               <el-menu-item index="2-1">用户信息</el-menu-item>
               <el-menu-item index="2-2">权限管理</el-menu-item>
             </el-sub-menu>
-            <el-menu-item index="3">
+            <el-menu-item index="3" @click="router.push('../manager/blog')">
               <template #title>
                 <el-icon><Notebook /></el-icon>
                 <span>博客管理</span>
