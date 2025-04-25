@@ -35,7 +35,7 @@
           <div class="category-header">
             <h3>{{ parent.name }}</h3>
             <div class="header-actions">
-              <el-button type="text" danger @click="handleDeleteRoot(parent)">删除</el-button>
+              <el-button type="text" danger @click="deleteCategory(parent)">删除</el-button>
             </div>
           </div>
 
@@ -48,7 +48,7 @@
               <div class="child-actions">
                 <el-button type="text" size="small" @click="handleEdit(child)">编辑</el-button>
                 <el-divider direction="vertical" />
-                <el-button type="text" size="small" @click="handleDelete(child)">删除</el-button>
+                <el-button type="text" size="small" @click="deleteCategory(child)">删除</el-button>
               </div>
             </el-collapse-item>
           </el-collapse>
@@ -59,19 +59,6 @@
         </div>
       </el-col>
     </el-row>
-
-    <!-- 分页 -->
-<!--    <div class="pagination-wrapper">-->
-<!--      <el-pagination-->
-<!--          v-model:current-page="categoryPageQueryDTO.pageNum"-->
-<!--          v-model:page-size="categoryPageQueryDTO.pageSize"-->
-<!--          :page-sizes="[5, 10, 20]"-->
-<!--          background-->
-<!--          layout="total, sizes, prev, pager, next, jumper"-->
-<!--          :total="categoryData.total"-->
-<!--          @size-change="handleSizeChange"-->
-<!--          @current-change="handleCurrentChange"/>-->
-<!--    </div>-->
 
     <!-- 一级分类添加弹窗 -->
     <el-dialog
@@ -87,7 +74,7 @@
       <template #footer>
         <span>
           <el-button @click="rootDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="saveRoot">保存</el-button>
+          <el-button type="primary" @click="saveCategory(null)">保存</el-button>
         </span>
       </template>
     </el-dialog>
@@ -106,66 +93,17 @@
       <template #footer>
         <span>
           <el-button @click="childDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="saveChild">保存</el-button>
+          <el-button type="primary" @click="saveCategory('child')">保存</el-button>
         </span>
       </template>
     </el-dialog>
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref, reactive, computed } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
-
-// 模拟数据
-const rootCategories = reactive([
-  {
-    id: 1,
-    name: '文学',
-    children: [
-      { id: 4, name: '小说', children: [] },
-      { id: 5, name: '散文', children: [] }
-    ],
-    expanded: true
-  },
-  {
-    id: 2,
-    name: '科技',
-    children: [
-      { id: 6, name: '计算机', children: [] },
-      { id: 7, name: '自然科学', children: [] }
-    ],
-    expanded: true
-  },
-  {
-    id: 3,
-    name: '历史',
-    children: [
-      { id: 8, name: '中国古代史', children: [] },
-      { id: 9, name: '世界史', children: [] }
-    ],
-    expanded: true
-  },
-  {
-    id: 4,
-    name: '科技',
-    children: [
-      { id: 6, name: '计算机', children: [] },
-      { id: 7, name: '自然科学', children: [] }
-    ],
-    expanded: true
-  },
-  {
-    id: 5,
-    name: '科技',
-    children: [
-      { id: 6, name: '计算机', children: [] },
-      { id: 7, name: '自然科学', children: [] }
-    ],
-    expanded: true
-  },
-]);
 
 // 状态管理
 const searchKeyword = ref('');
@@ -178,29 +116,6 @@ const childForm = reactive({ name: '' });
 const categoryData = reactive({
   categories:[]
 });
-// 分页查询实体
-const categoryPageQueryDTO = reactive({
-  pageNum: 1,
-  pageSize: 5,
-  keyWord: ''
-})
-
-// 分页查询
-// const load = () =>{
-//   request.get('/admin/bookCategory/page',{
-//     params: {
-//       pageNum: categoryPageQueryDTO.pageNum,
-//       pageSize: categoryPageQueryDTO.pageSize,
-//       keyWord: categoryPageQueryDTO.keyWord
-//     }
-//   }).then((res) => {
-//     console.log(res)
-//     categoryData.categories = res.data.records
-//     categoryData.total = res.data.total
-//   }).catch((err) => {
-//     console.log(err)
-//   })
-// }
 // 查询全部分类
 const load = () =>{
   request.get('/admin/bookCategory/all',{
@@ -213,110 +128,101 @@ const load = () =>{
 }
 // 加载页面时调用
 load()
-
-// 选择每页显示多少条记录时，触发分页查询
-const handleSizeChange = () =>{
-  load()
-}
-// 点击其他页面的时候触发分页查询
-const handleCurrentChange = () =>{
-  load()
-}
-
 // 表单验证规则
 const rootRules = {
   name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }]
 };
-
 const childRules = {
   name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }]
 };
-
-// 计算属性：过滤分类
-const filteredCategories = computed(() => {
-  if (!searchKeyword.value) return rootCategories;
-
-  return rootCategories.map(category => {
-    const filteredChildren = category.children.filter(child =>
-        child.name.includes(searchKeyword.value)
-    );
-    return {
-      ...category,
-      children: filteredChildren
-    };
-  });
-});
-
-// 添加一级分类
+// 打开添加一级分类弹窗
 const handleAddRoot = () => {
   rootForm.name = '';
   rootDialogVisible.value = true;
 };
-
-const saveRoot = () => {
-  if (!rootForm.name) return;
-
-  const newCategory = {
-    id: Date.now(),
-    name: rootForm.name,
-    children: [],
-    expanded: true
-  };
-
-  rootCategories.unshift(newCategory);
-  ElMessage.success('添加成功');
-  rootDialogVisible.value = false;
-};
-
 // 打开添加二级分类弹窗
 const openAddChildDialog = (parent) => {
   currentParent.value = parent;
   childForm.name = '';
   childDialogVisible.value = true;
 };
-
-const saveChild = () => {
-  if (!childForm.name) return;
-
-  const newChild = {
-    id: Date.now(),
-    name: childForm.name,
-    children: []
-  };
-
-  if (currentParent.value) {
-    currentParent.value.children.push(newChild);
-    ElMessage.success('添加成功');
+// 添加一级，二级分类
+const saveCategory = (type) => {
+  let id = null
+  let name = null
+  // 如果参数是null表示添加一级分类
+  // 如果参数是child则表示添加二级分类
+  // currentParent.value即当前一级目录的信息
+  if(type === 'child') {
+    id = currentParent.value.id
+    name = childForm.name;
+  }else{
+    name = rootForm.name
   }
-
-  childDialogVisible.value = false;
+  console.log(id)
+  console.log(name)
+  request.post('/admin/bookCategory',{
+    parentId: id,
+    name: name
+  }).then((res) => {
+    ElMessage({
+      message: '添加成功！',
+      type: 'success',
+    })
+    // 关闭弹窗
+    rootDialogVisible.value = false;
+    childDialogVisible.value = false;
+    // 重新加载页面
+    load()
+  }).catch((err) => {
+    ElMessage({
+      message: err,
+      type: 'error',
+    })
+  })
 };
-
-// 删除操作
-const handleDeleteRoot = (category) => {
-  ElMessage.confirm('确定删除该一级分类及其所有子分类？', '警告', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    const index = rootCategories.findIndex(c => c.id === category.id);
-    rootCategories.splice(index, 1);
-    ElMessage.success('删除成功');
-  });
+// 删除一级，二级分类操作
+const deleteCategory = (category) => {
+  let level = '一级分类'
+  if(category.parentId != null)
+    level = '二级分类'
+  let categoryName = '【'+category.name+'】';
+  ElMessageBox.confirm(
+      '确认要删除'+level+categoryName+'吗？',
+      '危险操作',
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+  ).then(() => {
+    request.delete('/admin/bookCategory/delete',{
+      params: {
+        id: category.id,
+        parentId: category.parentId
+      }
+      }).then((res) => {
+        console.log(res)
+        if(res.code === 0) {
+          ElMessage({
+            type: 'error',
+            message: res.msg,
+          })
+          return;
+        }
+      ElMessage({
+        type: 'success',
+        message: res.data,
+      })
+      load()
+    })
+  }).catch(() => {
+    ElMessage({
+      type: 'info',
+      message: '操作取消',
+    })
+  })
 };
-
-const handleDelete = (category) => {
-  ElMessage.confirm('确定删除该分类？', '警告', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    const parent = findParent(rootCategories, category);
-    parent.children = parent.children.filter(c => c.id !== category.id);
-    ElMessage.success('删除成功');
-  });
-};
-
 // 查找父级分类
 const findParent = (categories, target) => {
   for (const category of categories) {
@@ -326,7 +232,6 @@ const findParent = (categories, target) => {
   }
   return null;
 };
-
 // 切换展开状态
 const toggleExpand = (category) => {
   category.expanded = !category.expanded;
