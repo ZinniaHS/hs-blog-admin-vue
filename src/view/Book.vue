@@ -97,7 +97,19 @@
         <el-input v-model="bookUpdateDTO.description" type="textarea" />
       </el-form-item>
       <el-form-item label="图书封面图片">
-        <el-input v-model="bookUpdateDTO.coverUrl" />
+        <el-upload
+            class="avatar-uploader"
+            :action="uploadUrl"
+            :headers="uploadHeaders"
+            :show-file-list="false"
+            :on-success="handleUploadSuccess"
+            :before-upload="beforeUpload"
+            accept="image/*"
+        >
+          <img v-if="bookUpdateDTO.coverUrl" :src="bookUpdateDTO.coverUrl" class="avatar">
+          <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+<!--          <div class="el-upload__tip" slot="tip">只能上传jpg/png文件，且不超过5MB</div>-->
+        </el-upload>
       </el-form-item>
     </el-form>
     <template #footer>
@@ -148,10 +160,23 @@
         <span class="form-tip">图书描述最多300个字符</span>
       </el-form-item>
       <el-form-item label="图书封面图片">
-        <el-input v-model="saveBookDTO.coverUrl" />
+        <el-upload
+            class="avatar-uploader"
+            :action="uploadUrl"
+            :headers="uploadHeaders"
+            :show-file-list="false"
+            :on-success="handleUploadSuccess"
+            :before-upload="beforeUpload"
+            accept="image/*"
+        >
+          <img v-if="saveBookDTO.coverUrl" :src="saveBookDTO.coverUrl" class="avatar">
+          <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+<!--          <div class="el-upload__tip" slot="tip">只能上传jpg/png文件，且不超过5MB</div>-->
+        </el-upload>
       </el-form-item>
     </el-form>
     <template #footer>
+      <el-button @click="reset">重置</el-button>
       <el-button @click="dialogSaveBook = false">取消</el-button>
       <el-button :disabled="!formValid" type="primary" @click="saveBook">保存</el-button>
     </template>
@@ -182,10 +207,14 @@ const isEditing = ref(false);
 const selectedSaveValues = ref([])
 // 更新时，级联选择器绑定选中的值（默认为空数组）
 const selectedUpdateValues = ref([])
-
 // 使用 ref 来存储分类数据
 const bookCategory = ref([]);
-
+// 上传图书封面请求连接
+const uploadUrl = 'http://localhost:8080/admin/common/upload'
+// 上传变量
+// const uploadHeaders = computed(() => ({
+//   Authorization: `Bearer ${localStorage.getItem('token')}` // 根据实际情况调整
+// }));
 // ISBN验证函数
 const validateISBN = (rule, value) => {
   if (!value) return Promise.reject('ISBN不能为空')
@@ -226,6 +255,9 @@ const rules = reactive({
   ],
   description: [
     { max: 300, message: '不能超过300个字符', trigger: ['blur', 'input'] }
+  ],
+  coverUrl: [
+    { required: true, message: '请上传图书封面', trigger: 'blur' }
   ]
 })
 // 验证表单有效
@@ -241,110 +273,7 @@ const data = reactive({
   tableData: [],
   total: 1,
 })
-// 图书分类
-// const bookCategory = [
-//   {
-//     value: 1,
-//     label: "计算机与互联网",
-//     children: [
-//       {
-//         value: 3,
-//         label: "软件开发与应用",
-//       },
-//       {
-//         value: 4,
-//         label: "编程语言",
-//       },
-//       {
-//         value: 5,
-//         label: "人工智能",
-//       },
-//       {
-//         value: 6,
-//         label: "云计算与大数据",
-//       },
-//       {
-//         value: 7,
-//         label: "互联网营销",
-//       },
-//       {
-//         value: 8,
-//         label: "硬件开发",
-//       },
-//       {
-//         value: 9,
-//         label: "移动与互联网",
-//       },
-//       {
-//         value: 10,
-//         label: "办公软件指南",
-//       },
-//       {
-//         value: 11,
-//         label: "行业趋势",
-//       },
-//       {
-//         value: 25,
-//         label: "计算机基础",
-//       },
-//       {
-//         value: 12,
-//         label: "其他",
-//       },
-//     ]
-//   },
-//   {
-//     value: 13,
-//     label: "经济管理",
-//     children: [
-//       {
-//         value: 14,
-//         label: "投资理财",
-//       },
-//       {
-//         value: 15,
-//         label: "经济",
-//       },
-//       {
-//         value: 16,
-//         label: "金融",
-//       },
-//       {
-//         value: 17,
-//         label: "管理",
-//       },
-//       {
-//         value: 18,
-//         label: "企业经营",
-//       },
-//       {
-//         value: 19,
-//         label: "创新创业",
-//       },
-//       {
-//         value: 20,
-//         label: "财务会计",
-//       },
-//       {
-//         value: 21,
-//         label: "经典畅销",
-//       },
-//       {
-//         value: 22,
-//         label: "市场营销",
-//       },
-//       {
-//         value: 23,
-//         label: "领导力",
-//       },
-//       {
-//         value: 24,
-//         label: "其他",
-//       },
-//     ]
-//   },
-// ]
-// 新增图书实体
+// 图书新增实体
 const saveBookDTO = reactive({
   id: '',
   title: '',
@@ -487,8 +416,28 @@ const editDetail = (id) => {
   showDetail(id);
   isEditing.value = true; // 启用表单
 }
+// 重置新增图书表单
+function reset(){
+  saveBookDTO.id = '';
+  saveBookDTO.title = '';
+  saveBookDTO.author = '';
+  saveBookDTO.categoryId = '';
+  saveBookDTO.isbn = '';
+  saveBookDTO.publisher = '';
+  saveBookDTO.publishDate = '';
+  saveBookDTO.description = '';
+  saveBookDTO.downloadCount = 0;
+  saveBookDTO.coverUrl = '';
+  saveBookDTO.bookCategory = [];
+  selectedSaveValues.value = [];
+  // ElMessage({
+  //   message: "重置成功！",
+  //   type: 'success',
+  // })
+}
 // 保存新增图书
 const saveBook = async () => {
+  console.log(selectedSaveValues.value)
   try {
     await formRef.value.validate()
     request.post('/admin/book',{
@@ -508,6 +457,8 @@ const saveBook = async () => {
         message: '保存成功！',
         type: 'success',
       })
+      // 清空表单
+      reset()
       dialogSaveBook.value = false;
       load()
     }).catch((err) => {
@@ -524,7 +475,7 @@ const saveBook = async () => {
     })
   }
 }
-// 修改完图书信息后点击保存图书修改信息
+// 保存图书修改信息
 const saveChanges = async () => {
   console.log(bookUpdateDTO.categoryId);
   try {
@@ -600,6 +551,28 @@ const deleteBook =  () => {
     console.log(err)
   }
 }
+// 图书封面上传成功处理
+const handleUploadSuccess = (response: any) => {
+  console.log(response)
+  const dto = isEditing.value ? bookUpdateDTO : saveBookDTO;
+  dto.coverUrl = response.data;
+  ElMessage.success('上传成功');
+};
+// 图书封面上传前校验
+const beforeUpload = (file: File) => {
+  const isJPG = file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/jpg';
+  const isLt5M = file.size / 1024 / 1024 < 5;
+
+  if (!isJPG) {
+    ElMessage.error('只能上传 JPG/PNG 格式图片!');
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB!');
+  }
+
+  return isJPG && isLt5M;
+};
+
 
 </script>
 
@@ -705,4 +678,48 @@ const deleteBook =  () => {
   background-color: #F56C6C;
 }
 
+.avatar-uploader .el-upload {
+  border: 1px dashed var(--el-border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: var(--el-transition-duration-fast);
+}
+
+.avatar-uploader .el-upload:hover {
+  border-color: var(--el-color-primary);
+}
+
+.el-icon.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 178px;
+  height: 178px;
+  text-align: center;
+}
+
+.avatar {
+  width: 200px;       // 设置固定宽度
+  height: 200px;      // 设置固定高度
+  object-fit: cover;  // 保持比例填充，可裁剪多余部分
+  // 或使用下面这个属性如果希望完整显示图片
+  // object-fit: contain;
+}
+
+/* 同时需要调整上传组件的容器尺寸 */
+.avatar-uploader .el-upload {
+  width: 200px;
+  height: 200px;
+}
+
+.avatar-uploader .el-upload {
+  border: 1px dashed var(--el-border-color);
+  border-radius: 6px;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 </style>
