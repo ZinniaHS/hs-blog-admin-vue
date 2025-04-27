@@ -111,6 +111,9 @@
 <!--          <div class="el-upload__tip" slot="tip">只能上传jpg/png文件，且不超过5MB</div>-->
         </el-upload>
       </el-form-item>
+      <el-form-item prop="filePath" label="图书文件">
+        <el-input v-model="bookUpdateDTO.filePath"/>
+      </el-form-item>
     </el-form>
     <template #footer>
       <el-button @click="dialogShowDetail = false">取消</el-button>
@@ -125,9 +128,8 @@
              label-width="120px"
              @submit.native.prevent="saveBook">
       <el-form-item prop="title" label="书名">
-          <span class="form-tip">
-            <el-input v-model="saveBookDTO.title" />1-50个字符
-          </span>
+        <el-input v-model="saveBookDTO.title" />
+        <span class="form-tip">1-50个字符</span>
       </el-form-item>
       <el-form-item prop="author" label="作者">
         <el-input v-model="saveBookDTO.author" />
@@ -155,9 +157,9 @@
             @change="changePublishDate"
         />
       </el-form-item>
-      <el-form-item prop="description" label="图书简介">
+      <el-form-item prop="description" label="图书文件">
         <el-input v-model="saveBookDTO.description" type="textarea" />
-        <span class="form-tip">图书描述最多300个字符</span>
+        <span class="form-tip">图书描述最多500个字符</span>
       </el-form-item>
       <el-form-item label="图书封面图片">
         <el-upload
@@ -173,6 +175,9 @@
           <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
 <!--          <div class="el-upload__tip" slot="tip">只能上传jpg/png文件，且不超过5MB</div>-->
         </el-upload>
+      </el-form-item>
+      <el-form-item prop="filePath" label="图书简介">
+        <el-input v-model="saveBookDTO.filePath"/>
       </el-form-item>
     </el-form>
     <template #footer>
@@ -211,10 +216,6 @@ const selectedUpdateValues = ref([])
 const bookCategory = ref([]);
 // 上传图书封面请求连接
 const uploadUrl = 'http://localhost:8080/admin/common/upload'
-// 上传变量
-// const uploadHeaders = computed(() => ({
-//   Authorization: `Bearer ${localStorage.getItem('token')}` // 根据实际情况调整
-// }));
 // ISBN验证函数
 const validateISBN = (rule, value) => {
   if (!value) return Promise.reject('ISBN不能为空')
@@ -254,7 +255,7 @@ const rules = reactive({
     { required: true, message: '请选择出版日期', trigger: 'blur' },
   ],
   description: [
-    { max: 300, message: '不能超过300个字符', trigger: ['blur', 'input'] }
+    { max: 500, message: '不能超过500个字符', trigger: ['blur', 'input'] }
   ],
   coverUrl: [
     { required: true, message: '请上传图书封面', trigger: 'blur' }
@@ -285,6 +286,7 @@ const saveBookDTO = reactive({
   description: '',
   downloadCount: 0,
   coverUrl: '',
+  filePath: '',
   bookCategory: []
 })
 // 分页查询实体
@@ -305,6 +307,7 @@ const bookUpdateDTO = reactive({
   description: '',
   downloadCount: 0,
   coverUrl: '',
+  filePath: '',
   bookCategory: []
 })
 
@@ -385,6 +388,7 @@ const showDetail = (id) => {
     let bookCategory = res.data.bookCategory
     selectedUpdateValues.value = [bookCategory.parentId, bookCategory.id]
     bookUpdateDTO.categoryId = bookCategory.id
+    bookUpdateDTO.filePath = res.data.filePath
   })
 }
 // 增加一天
@@ -451,7 +455,8 @@ const saveBook = async () => {
       description: saveBookDTO.description,
       downloadCount: saveBookDTO.downloadCount,
       coverUrl: saveBookDTO.coverUrl,
-      categoryId: saveBookDTO.categoryId
+      categoryId: saveBookDTO.categoryId,
+      filePath: bookUpdateDTO.filePath
     }).then((res) => {
       ElMessage({
         message: '保存成功！',
@@ -491,7 +496,8 @@ const saveChanges = async () => {
       description: bookUpdateDTO.description,
       downloadCount: bookUpdateDTO.downloadCount,
       coverUrl: bookUpdateDTO.coverUrl,
-      categoryId: bookUpdateDTO.categoryId
+      categoryId: bookUpdateDTO.categoryId,
+      filePath: bookUpdateDTO.filePath
     }).then((res) => {
       ElMessage({
         message: '修改成功！',
