@@ -334,6 +334,7 @@ loadCategories();
 
 // 分页查询
 const load = () =>{
+  console.log('token:  '+localStorage.getItem('token'))
   request.get('/admin/book/page',{
     params: {
       pageNum: bookPageQueryDTO.pageNum,

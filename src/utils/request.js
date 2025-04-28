@@ -11,6 +11,11 @@ const request = axios.create({
 //可以自请求发送前对请求做一些处理
 request.interceptors.request.use( config => {
     config.headers['Content-Type']= 'application/json; charset=utf-8'
+    // 从 localStorage 获取 Token 并添加到请求头
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+    }
     return config
 }, error =>{
     return Promise.reject(error)
@@ -37,6 +42,9 @@ request.interceptors.response.use(
         // 保持原有错误处理逻辑
         if (error.response?.status === 401) {
             ElMessage.error('未授权');
+            localStorage.removeItem('token');
+            ElMessage.error('身份验证失效，请重新登录');
+            router.push('/Login');
         } else if (error.response?.status === 500) {
             ElMessage.error('系统异常');
         }

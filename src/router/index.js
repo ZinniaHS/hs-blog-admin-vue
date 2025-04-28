@@ -20,9 +20,19 @@ const router = createRouter({
             component: ()=>import( '../view/404.vue'),
         },
         {
+            path: '/Login',
+            name: 'Login',
+            meta: {title :'登录'},
+            component: ()=>import( '../view/Login.vue'),
+        },
+        {
             path: '/manager',
             name: 'manager',
             component: ()=>import( '../view/Manager.vue'),
+            meta: {
+                title: '管理页',
+                requiresAuth: true
+            },
             children: [
                 {
                     // 子路由路径前不用添加'/'
@@ -61,9 +71,26 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-    document.title = to.matched[0].meta.title
-    next()
-})
+    document.title = to.meta.title || '默认标题';
+
+    const token = localStorage.getItem('token');
+    const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+
+    // 需要认证但无token时跳转登录
+    if (requiresAuth && !token) {
+        next({
+            path: '/Login',
+            query: { redirect: to.fullPath } // 携带原始路径
+        });
+    }
+    // 已登录时访问登录页跳转首页
+    else if (to.path === '/Login' && token) {
+        next('/manager/home');
+    }
+    else {
+        next();
+    }
+});
 
 export default router
 
