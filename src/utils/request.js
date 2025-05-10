@@ -63,7 +63,12 @@ request.interceptors.response.use(
                 router.push('/login')
             }
             return Promise.reject(error)
-        } else if (error.response?.status === 500) {
+        }else if (error.response?.status === 403){
+            // ElMessage.error('身份验证失效，请重新登录')
+            // router.push('/login')
+            console.log(error)
+        }
+        else if (error.response?.status === 500) {
             ElMessage.error('系统异常');
         }
         return Promise.reject(error);

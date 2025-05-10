@@ -53,24 +53,37 @@
               <el-menu-item index="2-1">用户信息</el-menu-item>
               <el-menu-item index="2-2">权限管理</el-menu-item>
             </el-sub-menu>
-            <el-menu-item index="3" @click="router.push('../manager/blog')">
+            <el-sub-menu>
               <template #title>
-                <el-icon><Notebook /></el-icon>
-                <span>博客管理</span>
+                <el-icon><location /></el-icon>
+                <span>博客模块</span>
               </template>
-            </el-menu-item>
+              <el-menu-item index="3-1" @click="router.push({ name: 'blog' })">
+                <template #title>
+                  <el-icon><Notebook /></el-icon>
+                  <span>博客管理</span>
+                </template>
+              </el-menu-item>
+              <el-menu-item index="3-2" @click="router.push({ name: 'blogCategory' })">
+                <template #title>
+                  <el-icon><Notebook /></el-icon>
+                  <span>分类管理</span>
+                </template>
+              </el-menu-item>
+            </el-sub-menu>
+
             <el-sub-menu index="4">
               <template #title>
                 <el-icon><location /></el-icon>
                 <span>图书模块</span>
               </template>
-              <el-menu-item index="4-1" @click="router.push('../manager/book')">
+              <el-menu-item index="4-1" @click="router.push({ name: 'book' })">
                 <template #title>
                   <el-icon><Reading /></el-icon>
                   <span>图书管理</span>
                 </template>
               </el-menu-item>
-              <el-menu-item index="4-2" @click="router.push('../manager/bookCategory')">
+              <el-menu-item index="4-2" @click="router.push({ name: 'bookCategory' })">
                 <template #title>
                   <el-icon><Reading /></el-icon>
                   <span>分类管理</span>
@@ -82,7 +95,7 @@
                 <el-icon><location /></el-icon>
                 <span>测试</span>
               </template>
-              <el-menu-item index="5-1" @click="router.push('../manager/test')">登录测试</el-menu-item>
+              <el-menu-item index="5-1" @click="router.push({ name: 'test' })">登录测试</el-menu-item>
               <el-menu-item index="5-2">item two</el-menu-item>
             </el-sub-menu>
           </el-menu>
@@ -90,8 +103,8 @@
       </el-row>
       <!--右侧内容区-->
       <div class="content-wrapper">
-        <transition name="slide-fade" mode="out-in">
-          <router-view/>
+        <transition name="page-fade" mode="out-in">
+          <router-view />
         </transition>
       </div>
     </div>
@@ -117,25 +130,34 @@ const handleClose = (key: string, keyPath: string[]) => {
 <style lang="scss">
 .layout-container {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .main-layout {
   display: flex;
   flex: 1;
   min-height: calc(100vh - 60px);
+  /* 让内容区高度自适应 */
 }
 
 .sidebar-menu {
   width: 250px;
+  height: 100%;
+  min-height: calc(100vh - 60px); /* 60px为顶部nav高度 */
   flex-shrink: 0;
+  border-right: 1px solid #eee;
+  /* 确保左侧占满高度 */
 }
 
 .content-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 60px);
-  overflow: auto; // 允许整体内容滚动
+  min-height: 0; // 让flex布局自适应
+  background: #f7f7f7;
+  overflow: auto;
+  position: relative;
 }
 
 .content{
@@ -150,22 +172,16 @@ const handleClose = (key: string, keyPath: string[]) => {
 }
 
 /* 滑动动画 */
-.slide-fade-enter-active {
-  transition: all 0.3s ease-out;
+.page-fade-enter-active, .page-fade-leave-active {
+  transition: opacity 0.25s, transform 0.25s;
 }
-
-.slide-fade-leave-active {
-  transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
-}
-
-.slide-fade-enter-from {
-  transform: translateX(30px);
+.page-fade-enter-from, .page-fade-leave-to {
   opacity: 0;
+  transform: translateY(10px);
 }
-
-.slide-fade-leave-to {
-  transform: translateX(-30px);
-  opacity: 0;
+.page-fade-leave-from, .page-fade-enter-to {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .router-view {

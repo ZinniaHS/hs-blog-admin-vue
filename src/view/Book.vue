@@ -157,7 +157,7 @@
             @change="changePublishDate"
         />
       </el-form-item>
-      <el-form-item prop="description" label="图书文件">
+      <el-form-item prop="description" label="图书简介">
         <el-input v-model="saveBookDTO.description" type="textarea" />
         <span class="form-tip">图书描述最多500个字符</span>
       </el-form-item>
@@ -191,12 +191,24 @@
 <script setup lang="ts">
 
 import request from '@/utils/request'
-import {computed, reactive} from "vue";
+import {computed, reactive, onMounted, onBeforeUnmount} from "vue";
 import {Action, dayjs, ElMessage, ElMessageBox} from 'element-plus'
 import { ref } from 'vue';
 import {Search} from "@element-plus/icons-vue";
 import qs from 'qs';
 const formRef = ref(null)
+
+// 状态重置
+const resetComponentState = () => {
+  dialogShowDetail.value = false
+  dialogSaveBook.value = false
+  selectedRows.value = []
+  searchKeyword.value = ''
+  bookPageQueryDTO.pageNum = 1
+  bookPageQueryDTO.pageSize = 5
+  data.tableData = []
+  data.total = 1
+}
 
 // 搜索框中输入的内容
 const searchKeyword = ref('')
@@ -215,7 +227,7 @@ const selectedUpdateValues = ref([])
 // 使用 ref 来存储分类数据
 const bookCategory = ref([]);
 // 上传图书封面请求连接
-const uploadUrl = 'http://localhost:8080/admin/common/upload'
+const uploadUrl = 'http://localhost:8080/common/upload'
 // ISBN验证函数
 const validateISBN = (rule, value) => {
   if (!value) return Promise.reject('ISBN不能为空')
@@ -310,13 +322,28 @@ const bookUpdateDTO = reactive({
   filePath: '',
   bookCategory: []
 })
-
+// 分页查询
+const load = async () => {
+  try {
+    const res = await request.get('/admin/book/page', {
+      params: {
+        pageNum: bookPageQueryDTO.pageNum,
+        pageSize: bookPageQueryDTO.pageSize,
+        keyWord: bookPageQueryDTO.keyWord
+      }
+    });
+    data.tableData = res.data.records;
+    data.total = res.data.total;
+  } catch (err) {
+    console.error(err);
+    ElMessage.error('数据加载失败');
+  }
+};
 // 加载图书分类
 const loadCategories = async () => {
   try {
-    const response = await request.get('/admin/bookCategory/all'); // 请替换为实际的后端接口
-    console.log(response)
-    bookCategory.value = response.data.map(category => ({
+    const res = await request.get('/admin/bookCategory/all');
+    bookCategory.value = res.data.map(category => ({
       value: category.id,
       label: category.name,
       children: category.children ? category.children.map(child => ({
@@ -325,32 +352,21 @@ const loadCategories = async () => {
       })) : []
     }));
   } catch (error) {
-    ElMessage({ message: '加载分类失败', type: 'error' });
+    ElMessage.error('加载分类失败');
   }
 };
-
-// 初始化加载
-loadCategories();
-
-// 分页查询
-const load = () =>{
-  console.log('token:  '+localStorage.getItem('token'))
-  request.get('/admin/book/page',{
-    params: {
-      pageNum: bookPageQueryDTO.pageNum,
-      pageSize: bookPageQueryDTO.pageSize,
-      keyWord: bookPageQueryDTO.keyWord
-    }
-  }).then((res) => {
-    data.tableData = res.data.records
-    data.total = res.data.total
-  }).catch((err) => {
-    console.log(err)
-  })
-}
-// 加载页面时调用分页查询
-load()
-
+// 初始化
+onMounted(() => {
+  load();
+  loadCategories();
+  resetComponentState()
+});
+// 在组件卸载时重置状态
+onBeforeUnmount(() => {
+  selectedRows.value = [];
+  searchKeyword.value = '';
+  resetComponentState()
+});
 // 点击搜索框后搜索数据
 const pageQuery = ()=>{
   bookPageQueryDTO.keyWord = searchKeyword.value
@@ -366,7 +382,8 @@ const handleSizeChange = () =>{
   load()
 }
 // 点击其他页面的时候触发分页查询
-const handleCurrentChange = () =>{
+const handleCurrentChange = (newPage: number) => {
+  bookPageQueryDTO.pageNum = newPage
   load()
 }
 // 图书详情
