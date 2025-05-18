@@ -22,25 +22,25 @@
       </div>
     </div>
     <div class="table-container">
-      <el-table :data="data.tableData" style="margin:5px;width: 100%"
+      <el-table :data="Blogs.blog" style="margin:5px;width: 100%"
                 stripe :fit="true" :header-cell-style="{ background: '#f5f7fa' }" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" header-class-name="header-center" />
         <el-table-column fixed prop="title" label="标题" min-width="180" />
         <el-table-column prop="subTitle" label="副标题" min-width="180" />
-        <el-table-column prop="authorName" label="用户" min-width="120" />
+        <el-table-column prop="username" label="用户" min-width="120" />
         <el-table-column prop="categoryName" label="分类" min-width="120" />
-        <el-table-column prop="status" label="状态" min-width="120" >
+        <el-table-column prop="lockStatus" label="状态" min-width="120" >
           <template #default="scope">
           <span class="status-tag">
-            <span class="status-dot" :class="{ 'green': scope.row.status === 1, 'red': scope.row.status !== 1 }"></span>
-            {{ scope.row.status === 1 ? '已发布' : '草稿' }}
+            <span class="status-dot" :class="{ 'red': scope.row.lockStatus === 1, 'green': scope.row.lockStatus !== 1 }"></span>
+            {{ scope.row.lockStatus === 1 ? '已锁定' : '未锁定' }}
           </span>
           </template>
         </el-table-column>
         <el-table-column fixed="right" label="操作" min-width="200">
           <template #default="scope">
-            <el-button link type="primary" size="small" @click="switchStatus(scope.row)">{{ scope.row.status === 1 ? '锁定' : '发布' }}</el-button>
-            <el-button link type="primary" size="small" @click="dialogShowDetail=true;editDetail(scope.row.id)">编辑</el-button>
+            <el-button link type="primary" size="small" @click="switchlockStatus(scope.row)">{{ scope.row.lockStatus === 1 ? '解锁' : '锁定' }}</el-button>
+            <el-button link type="primary" size="small" @click="editDetail(scope.row.id)">编辑</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -52,7 +52,7 @@
             :page-sizes="[5, 10, 20]"
             background
             layout="total, sizes, prev, pager, next, jumper"
-            :total="data.total"
+            :total="Blogs.total"
             @size-change="handleSizeChange"
             @current-change="handleCurrentChange"/>
       </div>
@@ -73,34 +73,17 @@
         <el-input v-model="blogUpdateDTO.subTitle" />
       </el-form-item>
       <el-form-item label="作者">
-        <el-select v-model="blogUpdateDTO.authorId" placeholder="请选择作者" disabled>
-          <el-option v-for="item in authorList" :key="item.id" :label="item.name" :value="item.id"/>
-        </el-select>
+        <el-input v-model="blogUpdateDTO.username"  disabled/>
       </el-form-item>
       <el-form-item label="分类">
         <el-select v-model="blogUpdateDTO.categoryId" placeholder="请选择分类">
-          <el-option v-for="item in categoryList" :key="item.id" :label="item.name" :value="item.id"/>
+          <el-option v-for="item in categories" :key="item.id" :label="item.name" :value="item.id"/>
         </el-select>
       </el-form-item>
-      <el-form-item prop="content" label="内容（支持Markdown）">
-        <el-input v-model="blogUpdateDTO.content" type="textarea" rows="8" />
-      </el-form-item>
-      <el-form-item prop="summary" label="摘要">
-        <el-input v-model="blogUpdateDTO.summary" type="textarea" rows="3" />
-      </el-form-item>
-      <el-form-item label="博客封面">
-        <el-upload
-            class="avatar-uploader"
-            :action="uploadUrl"
-            :headers="uploadHeaders"
-            :show-file-list="false"
-            :on-success="handleUploadSuccess"
-            :before-upload="beforeUpload"
-            accept="image/*"
-        >
-          <img v-if="blogUpdateDTO.coverUrl" :src="blogUpdateDTO.coverUrl" class="avatar">
-          <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-        </el-upload>
+      <el-form-item prop="content">
+        <div class="editor-area">
+          <RichEditor v-model="blogUpdateDTO.content" />
+        </div>
       </el-form-item>
     </el-form>
     <template #footer>
@@ -112,21 +95,12 @@
 </template>
 
 <script setup lang="ts">
+import RichEditor from '@/components/RichEditor.vue'
 import { ref, reactive, onMounted } from 'vue';
-import { ElMessage } from 'element-plus';
+import {ElMessage, ElMessageBox} from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
-
-// 模拟数据
-const authorList = ref([
-  { id: 1, name: '张三' },
-  { id: 2, name: '李四' }
-]);
-
-const categoryList = ref([
-  { id: 1, name: '技术博客' },
-  { id: 2, name: '生活随笔' },
-  { id: 3, name: '读书笔记' }
-]);
+import request from '@/utils/request'
+import qs from 'qs';
 
 // 表单相关
 const dialogSaveBlog = ref(false);
@@ -134,14 +108,31 @@ const dialogShowDetail = ref(false);
 const isEditing = ref(false);
 const selectedRows = ref([]);
 const searchKeyword = ref('');
+// 分页查询实体
 const blogPageQueryDTO = reactive({
   pageNum: 1,
   pageSize: 5,
   keyWord: ''
 });
-
+// 分类数据
+const categories = ref([]);
+// 当多选框被选中时触发
+const handleSelectionChange = (rows: any[]) => {
+  selectedRows.value = rows;
+  console.log(selectedRows.value);
+};
+// 展示图书修改界面
+const editDetail = (id) => {
+  dialogShowDetail.value = true;
+  showDetail(id);
+  isEditing.value = true; // 启用表单
+}
 // 表单数据
 const saveBlogDTO = reactive({
+
+});
+// 博客更新实体
+const blogUpdateDTO = ref({
   id: '',
   title: '',
   subTitle: '',
@@ -151,20 +142,7 @@ const saveBlogDTO = reactive({
   categoryId: '',
   coverUrl: '',
   status: 0
-});
-
-const blogUpdateDTO = reactive({
-  id: '',
-  title: '',
-  subTitle: '',
-  content: '',
-  summary: '',
-  authorId: '',
-  categoryId: '',
-  coverUrl: '',
-  status: 0
-});
-
+})
 // 规则验证
 const rules = reactive({
   title: [
@@ -175,133 +153,121 @@ const rules = reactive({
     { required: true, message: '内容不能为空', trigger: 'blur' }
   ]
 });
-
 // 表格数据
-const data = reactive({
-  tableData: [],
+const Blogs = reactive({
+  blog: [],
   total: 0
 });
-
 // 生命周期
 onMounted(async () => {
-  await loadCategories();
-  await loadData();
+  await load();
+  await loadCategories()
 });
-
-// 加载分类数据
-const loadCategories = async () => {
+// 分页查询
+const load = async () => {
   try {
-    // 实际项目中应调用API
-    categoryList.value = [
-      { id: 1, name: '技术博客' },
-      { id: 2, name: '生活随笔' },
-      { id: 3, name: '读书笔记' }
-    ];
+    request.get('/admin/blog/page',{
+      params: {
+        pageNum: blogPageQueryDTO.pageNum,
+        pageSize: blogPageQueryDTO.pageSize,
+        keyWord: blogPageQueryDTO.keyWord
+      }
+    }).then((res) => {
+      // console.log(res);
+      Blogs.blog = res.data.records;
+      Blogs.total = res.data.total;
+    })
   } catch (error) {
     ElMessage.error('加载分类失败');
   }
 };
-
 // 加载数据
-const loadData = async () => {
+const loadCategories = async () => {
   try {
-    // 实际项目中应调用API
-    data.tableData = [
-      {
-        id: 1,
-        title: 'Vue3实战指南',
-        subTitle: '深入理解Composition API',
-        content: '# Vue3 核心概念...',
-        summary: '本文详细讲解Vue3的新特性...',
-        authorId: 1,
-        categoryId: 1,
-        status: 1,
-        viewCount: 120,
-        starCount: 45,
-        createTime: '2024-03-15 09:30:00'
-      }
-    ];
-    data.total = 1;
+    request.get('/admin/blogCategory/all')
+    .then((res) => {
+      // console.log(res);
+      categories.value = res.data
+    })
   } catch (err) {
     ElMessage.error('数据加载失败');
   }
 };
-
 // 分页处理
-const handleSizeChange = () => { loadData(); };
+const handleSizeChange = () => { load(); };
 const handleCurrentChange = (newPage: number) => {
   blogPageQueryDTO.pageNum = newPage;
-  loadData();
+  load();
 };
-
 // 搜索处理
 const pageQuery = () => {
   blogPageQueryDTO.keyWord = searchKeyword.value;
-  loadData();
+  load();
 };
-
 // 操作处理
 const deleteBlog = async () => {
   try {
-    await ElMessageBox.confirm('确定删除所选博客？');
-    // 实际项目中应调用API
-    ElMessage.success('删除成功');
-    loadData();
+    ElMessageBox.confirm(
+        '确定要删除吗？',
+        'Warning',
+        {
+          confirmButtonText: 'OK',
+          cancelButtonText: 'Cancel',
+          type: 'warning',
+        }
+    ).then(() => {
+      request.delete('/admin/blog/batchDelete',{
+        params: {
+          ids: selectedRows.value.map(item => item.id)
+        },
+        paramsSerializer: params => {
+          return qs.stringify(params, {
+            arrayFormat: 'repeat' // 生成 ids=7&ids=3&ids=4 格式
+          });
+        }
+      }).then((res) => {
+        ElMessage({
+          message: '删除成功！',
+          type: 'success',
+        })
+        load()
+      })
+    })
   } catch (error) {}
 };
-
-const switchStatus = async (row: any) => {
+// 切换锁定状态
+const switchlockStatus = async (rowData) => {
   try {
-    // 实际项目中应调用API
-    row.status = row.status === 1 ? 0 : 1;
-    ElMessage.success(`已${row.status === 1 ? '发布' : '撤回'}`);
-    loadData();
+    request.post('/admin/blog/lockStatus/'+rowData.lockStatus,null,{
+      params: {
+        id: rowData.id,
+      }
+    }).then((res) => {
+      ElMessage({
+        message: '状态切换成功！',
+        type: 'success',
+      })
+      load()
+    })
   } catch (error) {}
 };
-
-// 表单操作
-const saveBlog = async () => {
-  try {
-    // 实际项目中应调用API
-    ElMessage.success('保存成功');
-    dialogSaveBlog.value = false;
-    loadData();
-  } catch (error) {
-    ElMessage.error('保存失败');
-  }
-};
-
+// 保存博客
 const saveChanges = async () => {
   try {
-    // 实际项目中应调用API
-    ElMessage.success('修改成功');
-    dialogShowDetail.value = false;
-    loadData();
+    request.put('/admin/blog',{
+      id: blogUpdateDTO.value.id,
+      title: blogUpdateDTO.value.title,
+      subTitle: blogUpdateDTO.value.subTitle,
+      content: blogUpdateDTO.value.content,
+    }).then(res=>{
+      ElMessage.success('修改成功');
+      dialogShowDetail.value = false;
+      load();
+    })
   } catch (error) {
     ElMessage.error('修改失败');
   }
 };
-
-// 上传处理
-const uploadUrl = 'http://localhost:8080/admin/common/upload';
-const uploadHeaders = { Authorization: 'Bearer token' };
-
-const handleUploadSuccess = (response: any) => {
-  const dto = isEditing.value ? blogUpdateDTO : saveBlogDTO;
-  dto.coverUrl = response.data.url;
-  ElMessage.success('上传成功');
-};
-
-const beforeUpload = (file: File) => {
-  const isImage = file.type.startsWith('image/');
-  const isLt5M = file.size / 1024 / 1024 < 5;
-
-  if (!isImage) ElMessage.error('只能上传图片文件');
-  if (!isLt5M) ElMessage.error('图片大小不能超过5MB');
-
-  return isImage && isLt5M;
-};
-
 // 公共方法
 const reset = () => {
   Object.assign(saveBlogDTO, {
@@ -316,20 +282,12 @@ const reset = () => {
     status: 0
   });
 };
-
-const editDetail = (id: number) => {
-  // 实际项目中应调用API获取详情
-  Object.assign(blogUpdateDTO, {
-    id,
-    title: 'Vue3实战指南',
-    subTitle: '深入理解Composition API',
-    content: '# Vue3 核心概念...',
-    summary: '本文详细讲解Vue3的新特性...',
-    authorId: 1,
-    categoryId: 1,
-    coverUrl: '',
-    status: 1
-  });
+// 展示博客详情
+const showDetail = (id: number) => {
+  request.get('/admin/blog/'+id).then((res) => {
+    console.log(res);
+    blogUpdateDTO.value = res.data
+  })
   isEditing.value = true;
 };
 </script>

@@ -555,21 +555,31 @@ const switchStatus = (rowData) => {
 const deleteBook =  () => {
   console.log(selectedRows.value.map(item => item.id))
   try {
-    request.delete('/admin/book/batchDelete',{
-      params: {
-        ids: selectedRows.value.map(item => item.id)
-      },
-      paramsSerializer: params => {
-        return qs.stringify(params, {
-          arrayFormat: 'repeat' // 生成 ids=7&ids=3&ids=4 格式
-        });
-      }
-    }).then((res) => {
-      ElMessage({
-        message: '删除成功！',
-        type: 'success',
+    ElMessageBox.confirm(
+        '确定要删除吗？',
+        'Warning',
+        {
+          confirmButtonText: 'OK',
+          cancelButtonText: 'Cancel',
+          type: 'warning',
+        }
+    ).then(() => {
+      request.delete('/admin/book/batchDelete',{
+        params: {
+          ids: selectedRows.value.map(item => item.id)
+        },
+        paramsSerializer: params => {
+          return qs.stringify(params, {
+            arrayFormat: 'repeat' // 生成 ids=7&ids=3&ids=4 格式
+          });
+        }
+      }).then((res) => {
+        ElMessage({
+          message: '删除成功！',
+          type: 'success',
+        })
+        load()
       })
-      load()
     })
   }catch(err) {
     console.log(err)
