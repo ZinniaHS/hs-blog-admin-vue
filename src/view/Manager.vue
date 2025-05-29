@@ -9,21 +9,14 @@
         text-color="#fff"
         active-text-color="#ffd04b"
     >
-      <el-menu-item index="1">Processing Center</el-menu-item>
-      <el-sub-menu index="2">
-        <template #title>Workspace</template>
-        <el-menu-item index="2-1">item one</el-menu-item>
-        <el-menu-item index="2-2">item two</el-menu-item>
-        <el-menu-item index="2-3">item three</el-menu-item>
-        <el-sub-menu index="2-4">
-          <template #title>item four</template>
-          <el-menu-item index="2-4-1">item one</el-menu-item>
-          <el-menu-item index="2-4-2">item two</el-menu-item>
-          <el-menu-item index="2-4-3">item three</el-menu-item>
-        </el-sub-menu>
-      </el-sub-menu>
-      <el-menu-item index="3" disabled>Info</el-menu-item>
-      <el-menu-item index="4">Orders</el-menu-item>
+      <el-menu-item index="1">
+        <img
+            style="width: 40px"
+            src="../statics/images/brand.jpg"
+            alt="hs-blog"
+        />
+        <span class="top-nav-title">hs-blog 后台管理系统</span>
+      </el-menu-item>
     </el-menu>
     <div class="main-layout">
       <!--左侧导航栏-->
@@ -40,22 +33,37 @@
           >
             <el-sub-menu index="1">
               <template #title>
-                <el-icon><location /></el-icon>
+                <el-icon><House /></el-icon>
                 <span>首页</span>
               </template>
-              <el-menu-item index="1-1">系统概览</el-menu-item>
+              <el-menu-item index="1-1">
+                <template #title>
+                  <el-icon><Histogram /></el-icon>
+                  <span>系统概览</span>
+                </template>
+              </el-menu-item>
             </el-sub-menu>
             <el-sub-menu index="2">
               <template #title>
-                <el-icon><location /></el-icon>
+                <el-icon><User /></el-icon>
                 <span>用户管理</span>
               </template>
-              <el-menu-item index="2-1">用户信息</el-menu-item>
-              <el-menu-item index="2-2">权限管理</el-menu-item>
+              <el-menu-item index="2-1">
+                <template #title>
+                  <el-icon><User /></el-icon>
+                  <span>用户信息</span>
+                </template>
+              </el-menu-item>
+              <el-menu-item index="2-2">
+                <template #title>
+                  <el-icon><Key /></el-icon>
+                  <span>权限管理</span>
+                </template>
+              </el-menu-item>
             </el-sub-menu>
             <el-sub-menu>
               <template #title>
-                <el-icon><location /></el-icon>
+                <el-icon><Notebook /></el-icon>
                 <span>博客模块</span>
               </template>
               <el-menu-item index="3-1" @click="router.push({ name: 'blog' })">
@@ -66,7 +74,7 @@
               </el-menu-item>
               <el-menu-item index="3-2" @click="router.push({ name: 'blogCategory' })">
                 <template #title>
-                  <el-icon><Notebook /></el-icon>
+                  <el-icon><More /></el-icon>
                   <span>分类管理</span>
                 </template>
               </el-menu-item>
@@ -74,7 +82,7 @@
 
             <el-sub-menu index="4">
               <template #title>
-                <el-icon><location /></el-icon>
+                <el-icon><Reading /></el-icon>
                 <span>图书模块</span>
               </template>
               <el-menu-item index="4-1" @click="router.push({ name: 'book' })">
@@ -85,7 +93,7 @@
               </el-menu-item>
               <el-menu-item index="4-2" @click="router.push({ name: 'bookCategory' })">
                 <template #title>
-                  <el-icon><Reading /></el-icon>
+                  <el-icon><More /></el-icon>
                   <span>分类管理</span>
                 </template>
               </el-menu-item>
@@ -128,6 +136,11 @@ const handleClose = (key: string, keyPath: string[]) => {
 </script>
 
 <style lang="scss">
+
+.top-nav-title{
+  margin-left: 20px;
+}
+
 .layout-container {
   min-height: 100vh;
   display: flex;
