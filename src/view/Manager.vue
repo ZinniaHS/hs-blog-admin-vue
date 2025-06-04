@@ -9,7 +9,7 @@
         text-color="#fff"
         active-text-color="#ffd04b"
     >
-      <el-menu-item index="1">
+      <el-menu-item index="1" @click="router.push({ name: 'home' })">
         <img
             style="width: 40px"
             src="../statics/images/brand.jpg"
@@ -36,7 +36,7 @@
                 <el-icon><House /></el-icon>
                 <span>首页</span>
               </template>
-              <el-menu-item index="1-1">
+              <el-menu-item index="1-1" @click="router.push({ name: 'home' })">
                 <template #title>
                   <el-icon><Histogram /></el-icon>
                   <span>系统概览</span>
@@ -54,12 +54,12 @@
                   <span>用户信息</span>
                 </template>
               </el-menu-item>
-              <el-menu-item index="2-2">
-                <template #title>
-                  <el-icon><Key /></el-icon>
-                  <span>权限管理</span>
-                </template>
-              </el-menu-item>
+<!--              <el-menu-item index="2-2">-->
+<!--                <template #title>-->
+<!--                  <el-icon><Key /></el-icon>-->
+<!--                  <span>权限管理</span>-->
+<!--                </template>-->
+<!--              </el-menu-item>-->
             </el-sub-menu>
             <el-sub-menu>
               <template #title>
