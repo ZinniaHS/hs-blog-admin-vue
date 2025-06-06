@@ -4,6 +4,7 @@ import router from "@/router/index.js";
 
 const request = axios.create({
     baseURL: 'http://localhost:8080',
+    // baseURL: '/api',
     timeout:30000,//后台接口超时时间
     headers: {
         'Accept': 'application/json' // 明确声明接受 JSON

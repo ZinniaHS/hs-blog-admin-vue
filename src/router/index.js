@@ -42,6 +42,12 @@ const router = createRouter({
                     component: ()=>import( '../view/Home.vue'),
                 },
                 {
+                    path: 'user',
+                    name: 'user',
+                    meta: {title :'用户管理'},
+                    component: ()=>import( '../view/User.vue'),
+                },
+                {
                     path: 'test',
                     name: 'test',
                     meta: {title :'测试'},

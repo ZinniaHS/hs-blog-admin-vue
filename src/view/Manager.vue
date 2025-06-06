@@ -48,7 +48,7 @@
                 <el-icon><User /></el-icon>
                 <span>用户管理</span>
               </template>
-              <el-menu-item index="2-1">
+              <el-menu-item index="2-1" @click="router.push({ name: 'user' })">
                 <template #title>
                   <el-icon><User /></el-icon>
                   <span>用户信息</span>
